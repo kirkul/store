@@ -22,14 +22,14 @@ class UserRegistrationView(TitleMixin, SuccessMessageMixin, CreateView):
     template_name = 'users/registration.html'
     success_url = reverse_lazy('users:login')
     success_message = 'Вы успешно зарегистрированы'
-    title = 'Store-Регистрация'
+    title = 'Store - Регистрация'
 
 
 class UserProfileView(TitleMixin, UpdateView):
     model = User
     form_class = UserProfileForm
     template_name = 'users/profile.html'
-    title = 'Store-Личный кабинет'
+    title = 'Store - Личный кабинет'
 
     def get_success_url(self):
         return reverse_lazy('users:profile', args=(self.object.id,))
