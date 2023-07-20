@@ -3,6 +3,7 @@ from http import HTTPStatus
 from django.http import HttpResponseRedirect
 from django.views.generic.edit import CreateView
 from django.views.generic.base import TemplateView
+from django.views.generic.list import ListView
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -10,6 +11,8 @@ from django.http import HttpResponse
 from common.views import TitleMixin
 from orders.forms import OrderForm
 from products.models import Basket
+from orders.models import Order
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -21,6 +24,17 @@ class SuccessTemplateView(TitleMixin, TemplateView):
 
 class CanceledTemplateView(TemplateView):
     template_name = 'orders/canceled.html'
+
+class OrderListView(TitleMixin, ListView):
+    template_name = 'orders/orders.html'
+    title = 'Store - Заказы'
+    queryset = Order.objects.all()
+    ordering = ('-created')
+
+    def get_queryset(self):
+        queryset = super(OrderListView, self).get_queryset()
+        return queryset.filter(initiator=self.request.user)
+
 
 
 class OrderCreateView(TitleMixin, CreateView):
@@ -66,18 +80,17 @@ def stripe_webhook_view(request):
     # Handle the checkout.session.completed event
     if event['type'] == 'checkout.session.completed':
         # Retrieve the session. If you require line items in the response, you may include them by expanding line_items.
-        session = stripe.checkout.Session.retrieve(
-            event['data']['object']['id'],
-            expand=['line_items'],
-        )
+        session = event['data']['object']
 
-        line_items = session.line_items
         # Fulfill the purchase...
-        fulfill_order(line_items)
+        fulfill_order(session)
 
     # Passed signature verification
     return HttpResponse(status=200)
 
-def fulfill_order(line_items):
-    order_id = int(line_items.metadata.order_id)
+def fulfill_order(session):
+    # order_id = int(session.metadata.order_id)
+    # order = Order.objects.get(id=order_id)
+    # order.update_after_payment()
     print("Fulfilling order")
+
